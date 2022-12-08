@@ -3,9 +3,8 @@ package com.velialiyev.webflux_rest.controllers;
 import com.velialiyev.webflux_rest.domain.Category;
 import com.velialiyev.webflux_rest.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.reactivestreams.Publisher;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -23,5 +22,27 @@ public class CategoryController {
     @GetMapping("/{id}")
     public Mono<Category> getCategoryById(@PathVariable String id){
         return categoryRepository.findById(id);
+    }
+
+    @PostMapping
+    public Mono<Void> createCategory(@RequestBody Publisher<Category> categoryPublisher){
+        return categoryRepository.saveAll(categoryPublisher).then();
+    }
+
+    @PutMapping("/{id}")
+    public Mono<Category> updateCategory(@PathVariable String id, @RequestBody Category category){
+        category.setId(id);
+        return categoryRepository.save(category);
+    }
+
+    @PatchMapping("/{id}")
+    public Mono<Category> patchCategory(@PathVariable String id, @RequestBody Category category){
+        Category foundCategory = categoryRepository.findById(id).block();
+
+        if(!foundCategory.getDescription().equals(category.getDescription())){
+            foundCategory.setDescription(category.getDescription());
+            return categoryRepository.save(foundCategory);
+        }
+        return Mono.just(foundCategory);
     }
 }
